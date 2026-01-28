@@ -60,7 +60,7 @@ func (s *BlogService) ListBlogs(
 }
 
 func (s *BlogService) UpdateBlog(
-	idStr, email, title, content, category string,
+	idStr, email, title, content, category string,tags []string,
 	publishUnix int64,
 ) error {
 
@@ -73,6 +73,7 @@ func (s *BlogService) UpdateBlog(
 		"title":         title,
 		"content":       content,
 		"category":        category,
+		"tags": tags,
 		"publish_date":  publishUnix,
 		"updated_at":    time.Now().Unix(),
 	}

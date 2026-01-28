@@ -23,7 +23,8 @@ func NewBlogHandler() *BlogHandler {
 type CreateBlogRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Content     string `json:"content" binding:"required"`
-	Status      string `json:"status" binding:"required,oneof=draft published"`
+	Category      string `json:"category" binding:"required,oneof=draft published"`
+	Tags     []string  `json:"tags" binding:"required"`
 	PublishDate string `json:"publishDate" binding:"required"` // YYYY-MM-DD
 }
 
@@ -47,7 +48,8 @@ func (h *BlogHandler) Create(c *gin.Context) {
 		email,
 		req.Title,
 		req.Content,
-		req.Status,
+		req.Category,
+		req.Tags,
 		parsed.Unix(),
 	)
 	if err != nil {
@@ -100,7 +102,8 @@ func (h *BlogHandler) Update(c *gin.Context) {
 		email,
 		req.Title,
 		req.Content,
-		req.Status,
+		req.Category,
+		req.Tags,
 		parsed.Unix(),
 	)
 	if err != nil {
