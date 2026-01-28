@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/parthsarthi-dutt/blog-api/internal/config"
-	"github.com/parthsarthi-dutt/blog-api/internal/routes"
+	// "github.com/parthsarthi-dutt/blog-api/internal/routes"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 
 	r := gin.Default()
 
-	routes.RegisterRoutes(r)
+	// routes.RegisterRoutes(r)
 
 	port := os.Getenv("PORT")
 	if port == "" {
