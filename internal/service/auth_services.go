@@ -11,8 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
- // We'll move to .env later
+// We'll move to .env later
 
 type AuthService struct {
 	userRepo *repository.UserRepository
@@ -53,11 +52,17 @@ func (s *AuthService) Login(email, password string) (string, error) {
 		return "", errors.New("invalid email or password")
 	}
 
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", errors.New("JWT secret not configured")
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": user.Email,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"exp":   time.Now().Add(24 * time.Hour).Unix(), // ✅ correct
 	})
 
-	tokenString, err := token.SignedString(jwtSecret)
+	tokenString, err := token.SignedString([]byte(secret))
 	return tokenString, err
 }
+

@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"github.com/parthsarthi-dutt/blog-api/internal/config"
 	"github.com/parthsarthi-dutt/blog-api/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type BlogRepository struct {
@@ -50,6 +50,32 @@ func (r *BlogRepository) FindByUser(email string, skip, limit int64, filter bson
 	count, _ := r.collection.CountDocuments(ctx, filter)
 
 	return blogs, count, nil
+}
+func (r *BlogRepository) FindPublic(
+	skip, limit int64,
+	filter bson.M,
+) ([]models.Blog, int64, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := r.collection.Find(
+		ctx,
+		filter,
+		options.Find().SetSkip(skip).SetLimit(limit),
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var blogs []models.Blog
+	if err := cursor.All(ctx, &blogs); err != nil {
+		return nil, 0, err
+	}
+
+	total, _ := r.collection.CountDocuments(ctx, filter)
+
+	return blogs, total, nil
 }
 
 func (r *BlogRepository) Update(id primitive.ObjectID, email string, update bson.M) error {

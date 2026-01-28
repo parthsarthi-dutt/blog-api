@@ -21,13 +21,14 @@ func NewBlogService() *BlogService {
 }
 
 func (s *BlogService) CreateBlog(
-	email, title, content, category string,tags []string,
+	email, title, content, status,category string,tags []string,
 	publishUnix int64,
 ) error {
 	blog := models.Blog{
 		UserEmail:   email,
 		Title:       title,
 		Content:     content,
+		Status:status,
 		Category: category,
 		Tags: tags,
 		PublishDate: publishUnix,
@@ -42,6 +43,7 @@ func (s *BlogService) ListBlogs(
 	email string,
 	page, limit int,
 	category string,
+	status string,
 ) ([]models.Blog, int64, error) {
 
 	skip := (page - 1) * limit
@@ -49,6 +51,9 @@ func (s *BlogService) ListBlogs(
 
 	if category != "" {
 		filter["category"] = category
+	}
+	if status != "" {
+		filter["status"] = status
 	}
 
 	return s.blogRepo.FindByUser(
@@ -60,7 +65,7 @@ func (s *BlogService) ListBlogs(
 }
 
 func (s *BlogService) UpdateBlog(
-	idStr, email, title, content, category string,tags []string,
+	idStr, email, title, content, status,category string,tags []string,
 	publishUnix int64,
 ) error {
 
@@ -72,6 +77,7 @@ func (s *BlogService) UpdateBlog(
 	update := bson.M{
 		"title":         title,
 		"content":       content,
+		"status":status,
 		"category":        category,
 		"tags": tags,
 		"publish_date":  publishUnix,
@@ -79,6 +85,27 @@ func (s *BlogService) UpdateBlog(
 	}
 
 	return s.blogRepo.Update(id, email, update)
+}
+func (s *BlogService) ListPublicBlogs(
+	page, limit int,
+	category string,
+) ([]models.Blog, int64, error) {
+
+	skip := (page - 1) * limit
+
+	filter := bson.M{
+		"status": "published",
+	}
+
+	if category != "" {
+		filter["category"] = category
+	}
+
+	return s.blogRepo.FindPublic(
+		int64(skip),
+		int64(limit),
+		filter,
+	)
 }
 
 func (s *BlogService) DeleteBlog(idStr, email string) error {

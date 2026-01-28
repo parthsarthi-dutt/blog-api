@@ -17,8 +17,9 @@ auth := handlers.NewAuthHandler()
 
 r.POST("/register", auth.Register)
 r.POST("/login", auth.Login)
-
+blog := handlers.NewBlogHandler()
 // Protected routes
+r.GET("/blogs/public",blog.ListPublic)
 protected := r.Group("/")
 protected.Use(middleware.AuthMiddleware())
 
@@ -26,11 +27,11 @@ protected.GET("/test-protected", func(c *gin.Context) {
 	email := c.GetString("email")
 	c.JSON(200, gin.H{"message": "Hello " + email})
 })
-blog := handlers.NewTodoHandler()
 
-protected.POST("/todos", blog.Create)
-protected.GET("/todos", blog.List)
-protected.PUT("/todos/:id", blog.Update)
-protected.DELETE("/todos/:id", blog.Delete)
+
+protected.POST("/blogs", blog.Create)
+protected.GET("/blogs", blog.List)
+protected.PUT("/blogs/:id", blog.Update)
+protected.DELETE("/blogs/:id", blog.Delete)
 
 }

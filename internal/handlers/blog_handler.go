@@ -21,12 +21,13 @@ func NewBlogHandler() *BlogHandler {
 }
 
 type CreateBlogRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Content     string `json:"content" binding:"required"`
-	Category      string `json:"category" binding:"required,oneof=draft published"`
-	Tags     []string  `json:"tags" binding:"required"`
-	PublishDate string `json:"publishDate" binding:"required"` // YYYY-MM-DD
+	Title    string   `json:"title" binding:"required"`
+	Content  string   `json:"content" binding:"required"`
+	Status   string   `json:"status" binding:"required,oneof=draft published"`
+	Category string   `json:"category" binding:"required"`
+	Tags     []string `json:"tags"`
 }
+
 
 func (h *BlogHandler) Create(c *gin.Context) {
 	var req CreateBlogRequest
@@ -36,21 +37,22 @@ func (h *BlogHandler) Create(c *gin.Context) {
 		return
 	}
 
-	email := c.GetString("email") // from JWT middleware
+	email := c.GetString("email")
 
-	parsed, err := time.Parse("2006-01-02", req.PublishDate)
-	if err != nil {
-		utils.Error(c, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid date format, expected YYYY-MM-DD")
-		return
+	var publishUnix int64
+	if req.Status == "published" {
+		loc, _ := time.LoadLocation("Asia/Kolkata")
+		publishUnix = time.Now().In(loc).Unix()
 	}
 
-	err = h.blogService.CreateBlog(
+	err := h.blogService.CreateBlog(
 		email,
 		req.Title,
 		req.Content,
+		req.Status,
 		req.Category,
 		req.Tags,
-		parsed.Unix(),
+		publishUnix,
 	)
 	if err != nil {
 		utils.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Something went wrong")
@@ -59,15 +61,39 @@ func (h *BlogHandler) Create(c *gin.Context) {
 
 	utils.Created(c, nil, "Blog created successfully")
 }
+func (h *BlogHandler) ListPublic(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	category := c.Query("category")
+
+	blogs, total, err := h.blogService.ListPublicBlogs(
+		page,
+		limit,
+		category,
+	)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Something went wrong")
+		return
+	}
+
+	utils.Success(c, gin.H{
+		"data":  blogs,
+		"page":  page,
+		"limit": limit,
+		"total": total,
+	}, "Public blogs fetched")
+}
+
 
 func (h *BlogHandler) List(c *gin.Context) {
 	email := c.GetString("email")
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	status := c.Query("status") // optional filter
+	category := c.Query("category")
+	status:=c.Query("status")
 
-	blogs, total, err := h.blogService.ListBlogs(email, page, limit, status)
+	blogs, total, err := h.blogService.ListBlogs(email, page, limit, category,status)
 	if err != nil {
 		utils.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Something went wrong")
 		return
@@ -91,20 +117,21 @@ func (h *BlogHandler) Update(c *gin.Context) {
 		return
 	}
 
-	parsed, err := time.Parse("2006-01-02", req.PublishDate)
-	if err != nil {
-		utils.Error(c, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid date format, expected YYYY-MM-DD")
-		return
+	var publishUnix int64
+	if req.Status == "published" {
+		loc, _ := time.LoadLocation("Asia/Kolkata")
+		publishUnix = time.Now().In(loc).Unix()
 	}
 
-	err = h.blogService.UpdateBlog(
+	err := h.blogService.UpdateBlog(
 		id,
 		email,
 		req.Title,
 		req.Content,
+		req.Status,
 		req.Category,
 		req.Tags,
-		parsed.Unix(),
+		publishUnix,
 	)
 	if err != nil {
 		utils.Error(c, http.StatusForbidden, "FORBIDDEN", "You are not allowed to update this blog")
@@ -113,6 +140,7 @@ func (h *BlogHandler) Update(c *gin.Context) {
 
 	utils.Success(c, nil, "Blog updated successfully")
 }
+
 
 func (h *BlogHandler) Delete(c *gin.Context) {
 	id := c.Param("id")

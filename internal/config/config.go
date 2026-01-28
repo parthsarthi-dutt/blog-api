@@ -31,6 +31,6 @@ if MONGO_URI == "" {
 		log.Fatal(err)
 	}
 
-	DB = client.Database("todo_db")
+	DB = client.Database("blog_db")
 	log.Println("Connected to MongoDB")
 }
